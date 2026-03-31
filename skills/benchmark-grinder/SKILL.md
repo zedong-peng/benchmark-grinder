@@ -1,0 +1,295 @@
+---
+name: benchmark-grinder
+description: Run autonomous benchmark-improvement loops for projects that need repeated score optimization, including LLM, CV, retrieval, systems, and other measurable experiments. Use when the user wants Codex to establish a baseline, verify setup and benchmark assets, modify only approved files, run experiments, log every result, keep project docs updated, and continue iterating until explicitly stopped.
+---
+
+# Benchmark Grinder
+
+Use this skill when the task is an ongoing benchmark-improvement loop rather than a one-off code change.
+
+This skill is domain-agnostic. It applies to LLM, CV, retrieval, ranking, systems, inference, and other workloads that have:
+
+- a benchmark or evaluation command
+- a primary metric
+- a bounded edit surface
+- a reproducible run path
+
+## Auto-discovery mode
+
+When the user says "optimize [benchmark name]" or "grind [metric]" without providing a contract, automatically discover the project structure:
+
+1. **Find evaluation scripts**: Search for files matching `eval*.py`, `test*.py`, `benchmark*.py`, `run*.sh`, or similar patterns
+2. **Identify the metric**: Look in README, docs, or eval scripts for metric names (accuracy, loss, throughput, latency, mAP, etc.)
+3. **Infer editable scope**: Typically includes model code, training scripts, config files, prompts, kernels - NOT eval harnesses or test data
+4. **Infer frozen scope**: Evaluation scripts, test datasets, gold labels, correctness checks, benchmark harnesses
+5. **Find the run command**: Check README, Makefile, package.json scripts, or common patterns like `python eval.py`, `pytest`, `make bench`
+6. **Create benchmark.md**: Document your findings so the user can verify before the first run
+
+Common patterns by domain:
+
+**LLM projects:**
+- Editable: `model/`, `train.py`, `prompts/`, `config.yaml`, inference code
+- Frozen: `eval.py`, `test_data/`, `judge.py`, gold answers
+- Metric: accuracy, win_rate, judge_score, perplexity
+- Command: `python eval.py` or `pytest tests/`
+
+**Kernel/systems projects:**
+- Editable: `kernels/`, `*.cu`, `*.cpp`, launch configs, optimization flags
+- Frozen: `test_correctness.py`, `benchmark_harness.py`, reference outputs
+- Metric: throughput, latency, GFLOPS, memory_bandwidth
+- Command: `python benchmark.py` or `make bench`
+
+**CV projects:**
+- Editable: `models/`, `train.py`, augmentation, architecture code
+- Frozen: `eval.py`, test datasets, annotation files
+- Metric: accuracy, mAP, IoU, FID
+- Command: `python eval.py --split test`
+
+After discovery, show the user your findings and ask for confirmation before the first baseline run.
+
+## Required project facts
+
+Before starting, confirm or infer:
+
+- target metric and whether higher or lower is better
+- canonical benchmark or training command
+- resource budget such as time, GPU, memory, disk, or API spend
+- editable scope
+- frozen scope
+- benchmark assets required locally
+- result ledger path
+- baseline rule
+
+If any are missing and auto-discovery doesn't find them, read the repo and create a concrete project contract before experimentation.
+
+## Project contract
+
+Maintain or create a short operating contract such as `benchmark.md`.
+
+It should record:
+
+- benchmark name
+- target metric and optimization direction
+- canonical run command
+- setup and download steps
+- editable files
+- forbidden changes
+- timeout rule
+- result logging format
+
+If the repo already has an equivalent file like `program.md`, `RUNBOOK.md`, or `EXPERIMENTS.md`, reuse it instead of duplicating it.
+
+## Setup workflow
+
+1. Read the benchmark contract and in-scope files.
+2. Verify the current branch or create a dedicated experiment branch.
+3. Verify datasets, weights, tokenizers, caches, fixtures, or other benchmark assets exist locally.
+4. If assets are missing, fetch them using the project's documented path.
+5. Initialize the result ledger if needed.
+6. Run the untouched baseline first unless the project is currently broken.
+
+## Asset rules
+
+When external assets are required:
+
+- prefer the project's existing setup commands
+- record exactly how assets were fetched
+- do not modify evaluation data
+- do not vendor heavy assets into git unless the repo already does
+- verify presence before downloading again
+
+Typical assets include:
+
+- datasets
+- pretrained weights
+- tokenizers
+- indexes
+- compiled artifacts
+- benchmark fixtures
+
+## Baseline-first rule
+
+The first completed run should usually be the current code as-is.
+
+Use that run to:
+
+- establish the current score
+- validate the environment
+- catch setup issues early
+- define the keep or discard threshold
+
+Only skip it if the current code cannot run at all.
+
+## Edit policy
+
+Only modify files inside the approved editable scope.
+
+Never change:
+
+- gold labels or evaluation answers
+- scoring code unless benchmark maintenance is explicitly in scope
+- hidden test fixtures
+- unrelated infrastructure just to force a score
+
+If a score can be improved by gaming the evaluator, treat that result as invalid.
+
+## Core loop
+
+Repeat until the user interrupts you or a hard stop condition is reached:
+
+1. inspect current branch, commit, and relevant local state
+2. choose one experimental idea with a clear hypothesis
+3. implement it within the approved scope
+4. commit the experiment
+5. run the benchmark and capture logs
+6. parse the primary metric and relevant secondary metrics
+7. append the outcome to the result ledger
+8. keep the change only if it improves the result or preserves it with lower complexity or cost
+9. safely revert failed ideas according to the repo rules
+10. start the next idea immediately
+
+Do not stop after each run to ask whether to continue.
+
+## Good experiment criteria
+
+Prefer experiments that are:
+
+- single-hypothesis
+- cheap to evaluate
+- easy to revert
+- simple relative to expected gain
+- aligned with the existing architecture
+
+Common experiment classes:
+
+- hyperparameters
+- architecture
+- data pipeline
+- loss functions
+- augmentation
+- decoding or inference
+- batching and throughput
+- indexing and retrieval
+- systems tuning
+
+Avoid bundling many unrelated changes unless broad exploration is justified.
+
+## Keep and discard
+
+Use the primary metric first.
+
+Keep when:
+
+- the primary metric improves
+- or the metric is effectively unchanged and the system becomes simpler, cheaper, or more stable
+
+Discard when:
+
+- the metric regresses
+- complexity rises without meaningful gain
+- memory, latency, or cost worsens without justification
+- the result is noisy and unsupported
+
+If noise is high, rerun selectively rather than overinterpreting tiny deltas.
+
+## Logging
+
+Every run should append to a machine-readable ledger such as `results.tsv` or `results.jsonl`.
+
+Recommended fields:
+
+- commit
+- timestamp
+- benchmark
+- primary_metric
+- secondary_metrics
+- cost_or_memory
+- status
+- short_description
+- log_path
+
+Recommended statuses:
+
+- `keep`
+- `discard`
+- `crash`
+- `timeout`
+- `invalid`
+
+Preserve the existing project format if one already exists.
+
+## Documentation upkeep
+
+Keep the operating docs current while the loop runs.
+
+At minimum, update:
+
+- the result ledger after every run
+- the benchmark contract when setup or rules change
+- a progress note when a new best result appears or a failure pattern emerges
+
+Useful files include:
+
+- `benchmark.md`
+- `results.tsv`
+- `notes.md`
+- `progress.md`
+- per-run logs
+
+Do not let the docs drift behind the experiments.
+
+## Failure handling
+
+Treat these outcomes explicitly:
+
+- crash
+- timeout
+- OOM
+- numerical instability
+- bad checkpoint
+- missing asset
+- broken environment
+
+When a run fails:
+
+1. inspect the log
+2. decide whether the issue is a narrow fix or a failed idea
+3. log the failure
+4. rerun only if the fix is local and justified
+
+Do not loop on the same broken idea.
+
+## Timeout discipline
+
+Define both an expected runtime and a hard timeout.
+
+If a run exceeds the hard timeout:
+
+- terminate it
+- mark it as `timeout`
+- record enough context to avoid repeating the mistake
+
+## Autonomy rule
+
+This skill is designed for unattended benchmark work.
+
+Once setup is complete and the loop has started:
+
+- continue iterating without asking for permission after each run
+- stop only for a real blocker, explicit user interruption, or a hard safety constraint
+- leave enough logs and documentation for later inspection
+
+If obvious ideas run out, read the code again, study prior failures, compare kept and discarded runs, and continue with the next best hypothesis.
+
+## Domain adaptation
+
+Adapt the metric and levers to the project.
+
+Examples:
+
+- LLM: loss, bpb, perplexity, tokens per second, memory, optimizer schedule, architecture
+- CV: accuracy, mAP, IoU, FID, throughput, augmentation, width, depth, resolution
+- Retrieval: recall, nDCG, MRR, latency, chunking, index settings, reranker behavior
+- Systems: throughput, latency, memory, compile time, cache hit rate, batching, concurrency
+
+The workflow stays stable even when the benchmark changes.
