@@ -1,52 +1,14 @@
-# LoCoMo Benchmark Contract
+# Benchmark Grinder - Skill Definition Project
 
-## Benchmark
-LoCoMo (Long Context Memory Optimization)
+This repository contains the benchmark-grinder skill definition, not a benchmark to be optimized.
 
-## Target Metric
-- Primary: Accuracy (higher is better)
-- Secondary: F1 score, precision, recall
+To use this skill in your own benchmark projects, install it to Claude Code:
 
-## Run Command
 ```bash
-benchmark-grinder run experiments/grinder_config.json
+git clone https://github.com/zedong-peng/benchmark-grinder.git ~/.claude/skills/benchmark-grinder
 ```
 
-## Setup
-```bash
-pip install benchmark-grinder
-export OPENAI_API_KEY="your-key"
+Then in your benchmark project, say:
 ```
-
-## Editable Scope
-- `experiments/grinder_config.json` - all configuration parameters
-- Memory source settings (conversation, dataset, hybrid)
-- Model selection (gpt-4o-mini, gpt-4o, claude-3-5-sonnet-20241022)
-- Retrieval settings (top_k, use_embeddings)
-- Worker counts (sample_workers, question_workers)
-- Timeout values
-
-## Frozen Scope
-- Evaluation code (benchmark-grinder package)
-- Test datasets
-- Scoring logic
-
-## Timeout
-- Per-run: 30 minutes
-- Hard timeout: 60 minutes
-
-## Result Logging
-Append to `experiments/results/grinder_results.jsonl`:
-```json
-{
-  "commit": "abc123",
-  "timestamp": "2026-03-31T14:45:00Z",
-  "config": {...},
-  "metrics": {"accuracy": 0.85, "f1": 0.82},
-  "status": "keep|discard|crash|timeout",
-  "description": "Brief change description"
-}
+Use benchmark-grinder to optimize [your metric]
 ```
-
-## Baseline Rule
-Run current config first to establish baseline.
