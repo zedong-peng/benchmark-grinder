@@ -51,31 +51,6 @@ The skill provides a general operating protocol for autonomous benchmark work:
 6. update project docs while the loop runs
 7. do not stop after each run unless blocked or interrupted
 
-## Is this the right interaction model
-
-Yes. The intended usage is:
-
-1. start Codex or Claude Code inside a benchmark repo
-2. make the skill or its instructions available to the agent
-3. provide a project-specific contract such as `benchmark.md`
-4. tell the agent to keep optimizing the target metric until stopped
-
-Examples:
-
-- "Use benchmark-grinder on this repo. The target is answer accuracy on our eval set. Keep improving the score until I stop you."
-- "Use benchmark-grinder here. Optimize kernel throughput without breaking correctness. Log every run and continue autonomously."
-
-The key design assumption is that the skill provides the reusable loop, while each target repo provides the project-specific contract:
-
-- exact benchmark command
-- metric definition
-- editable files
-- forbidden changes
-- dataset or asset setup
-- timeout and logging rules
-
-That separation is the right design for your use case. You do not want one skill hardcoded to only LLM training or only CUDA kernels.
-
 ## How to use it
 
 ### Quick start (auto-discovery)
@@ -104,7 +79,7 @@ For more control, create a `benchmark.md` contract yourself:
 - timeout rules
 - result logging format
 
-Use the templates in [`templates/benchmark.md`](/Users/pengzedong/Documents/GitHub/benchmark-grinder/templates/benchmark.md) and [`templates/results.tsv`](/Users/pengzedong/Documents/GitHub/benchmark-grinder/templates/results.tsv) as starting points.
+Use the templates in `templates/benchmark.md` and `templates/results.tsv` as starting points.
 
 ## Install
 
@@ -161,7 +136,7 @@ A target repo might define:
 - editable scope such as prompts, inference parameters, data formatting, retrieval, model code, or training loop
 - frozen scope such as eval questions, labels, and scoring harness
 
-Then you run Codex or Claude Code in that repo and say:
+Then you run Claude Code in that repo and say:
 
 ```text
 Use benchmark-grinder. Optimize answer score on this eval without changing the evaluator or gold data. Log each run to results.tsv and continue until I stop you.

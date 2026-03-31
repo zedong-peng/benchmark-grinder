@@ -82,10 +82,10 @@ If the repo already has an equivalent file like `program.md`, `RUNBOOK.md`, or `
 ## Setup workflow
 
 1. Read the benchmark contract and in-scope files.
-2. Verify the current branch or create a dedicated experiment branch.
+2. **Create a dedicated experiment branch**: Propose a branch name like `benchmark/<date>` or `benchmark/<metric>-<date>`. Create it with `git checkout -b <branch-name>`.
 3. Verify datasets, weights, tokenizers, caches, fixtures, or other benchmark assets exist locally.
 4. If assets are missing, fetch them using the project's documented path.
-5. Initialize the result ledger if needed.
+5. Initialize the result ledger if needed (e.g., `results.tsv` with header row).
 6. Run the untouched baseline first unless the project is currently broken.
 
 ## Asset rules
@@ -137,16 +137,16 @@ If a score can be improved by gaming the evaluator, treat that result as invalid
 
 Repeat until the user interrupts you or a hard stop condition is reached:
 
-1. inspect current branch, commit, and relevant local state
-2. choose one experimental idea with a clear hypothesis
-3. implement it within the approved scope
-4. commit the experiment
-5. run the benchmark and capture logs
-6. parse the primary metric and relevant secondary metrics
-7. append the outcome to the result ledger
-8. keep the change only if it improves the result or preserves it with lower complexity or cost
-9. safely revert failed ideas according to the repo rules
-10. start the next idea immediately
+1. Check git state: current branch and commit
+2. Choose one experimental idea with a clear hypothesis
+3. Implement it within the approved scope
+4. **Git commit the experiment** with a descriptive message
+5. Run the benchmark and capture logs
+6. Parse the primary metric and relevant secondary metrics
+7. Append the outcome to the result ledger (do NOT commit the ledger file)
+8. **If the result improved**: keep the commit and advance the branch
+9. **If the result regressed or crashed**: `git reset --hard HEAD~1` to discard the commit
+10. Start the next idea immediately
 
 Do not stop after each run to ask whether to continue.
 
@@ -196,9 +196,11 @@ If noise is high, rerun selectively rather than overinterpreting tiny deltas.
 
 Every run should append to a machine-readable ledger such as `results.tsv` or `results.jsonl`.
 
+**IMPORTANT**: Do NOT commit the results ledger to git. Keep it untracked so the git history stays clean with only code changes.
+
 Recommended fields:
 
-- commit
+- commit (short hash, 7 chars)
 - timestamp
 - benchmark
 - primary_metric
@@ -284,12 +286,5 @@ If obvious ideas run out, read the code again, study prior failures, compare kep
 ## Domain adaptation
 
 Adapt the metric and levers to the project.
-
-Examples:
-
-- LLM: loss, bpb, perplexity, tokens per second, memory, optimizer schedule, architecture
-- CV: accuracy, mAP, IoU, FID, throughput, augmentation, width, depth, resolution
-- Retrieval: recall, nDCG, MRR, latency, chunking, index settings, reranker behavior
-- Systems: throughput, latency, memory, compile time, cache hit rate, batching, concurrency
 
 The workflow stays stable even when the benchmark changes.
