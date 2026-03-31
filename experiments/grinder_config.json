@@ -1,0 +1,16 @@
+{
+  "model": "gpt-4o-mini",
+  "memory_source": "hybrid",
+  "retrieval": {
+    "top_k": 5,
+    "use_embeddings": true
+  },
+  "extraction": {
+    "shared_model": true
+  },
+  "workers": {
+    "sample_workers": 4,
+    "question_workers": 8
+  },
+  "timeout": 60
+}
